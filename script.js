@@ -36,6 +36,136 @@ let charts = {};
 let ultimoDocFoto = null;
 let todasFotosCache = [];
 
+// ==================== CONFIGURAÇÕES DO GOOGLE DRIVE ====================
+const GOOGLE_CLIENT_ID = '241579865765-ak7eabusfoqi5fp639ts6n5umn17rsva.apps.googleusercontent.com';
+const GOOGLE_API_KEY = 'SUA_API_KEY_AQUI';      // ⚠️ Cole aqui a sua API Key gerada no Google Cloud
+const GOOGLE_APP_ID = '241579865765';            // Seu Project Number
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+let tokenClient;
+let accessToken = null;
+let pickerInited = false;
+let gisInited = false;
+
+// ==================== FUNÇÕES DO GOOGLE DRIVE ====================
+function gapiLoaded() {
+    console.log("gapi loaded");
+    gapi.load('client:picker', initializePicker);
+}
+
+function gisLoaded() {
+    console.log("gis loaded");
+    if (google && google.accounts && google.accounts.oauth2) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: SCOPES,
+            callback: '', // será definido depois
+        });
+        gisInited = true;
+        maybeEnableButtons();
+    } else {
+        console.error("Google Identity Services não disponível");
+    }
+}
+
+async function initializePicker() {
+    await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+    pickerInited = true;
+    maybeEnableButtons();
+}
+
+function maybeEnableButtons() {
+    if (pickerInited && gisInited) {
+        console.log("Picker e GIS prontos!");
+    }
+}
+
+function handleGoogleDriveAuth() {
+    if (!gisInited || !tokenClient) {
+        console.error("GIS não inicializado. Aguarde o carregamento.");
+        alert("Aguarde um momento e tente novamente. Se persistir, recarregue a página.");
+        return;
+    }
+    if (accessToken === null) {
+        tokenClient.callback = async (response) => {
+            if (response.error !== undefined) {
+                console.error(response);
+                alert("Erro na autenticação: " + response.error);
+                return;
+            }
+            accessToken = response.access_token;
+            createPicker();
+        };
+        tokenClient.requestAccessToken();
+    } else {
+        createPicker();
+    }
+}
+
+async function createPicker() {
+    if (!accessToken) {
+        console.error("Sem token de acesso");
+        return;
+    }
+    const view = new google.picker.View(google.picker.ViewId.DOCS);
+    view.setMimeTypes("image/jpeg,image/png,image/gif,image/webp,image/bmp");
+
+    const picker = new google.picker.PickerBuilder()
+        .enableFeature(google.picker.Feature.NAV_HIDDEN)
+        .setDeveloperKey(GOOGLE_API_KEY)
+        .setAppId(GOOGLE_APP_ID)
+        .setOAuthToken(accessToken)
+        .addView(view)
+        .addView(new google.picker.DocsUploadView())
+        .setCallback(pickerCallback)
+        .build();
+    picker.setVisible(true);
+}
+
+async function pickerCallback(data) {
+    if (data.action === google.picker.Action.PICKED) {
+        const docs = data.docs;
+        const statusDiv = document.getElementById('importStatus');
+        if (statusDiv) statusDiv.innerHTML = "⏳ Importando...";
+
+        for (const doc of docs) {
+            try {
+                const response = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) throw new Error(`Erro ao baixar ${doc.name}`);
+                const blob = await response.blob();
+                const file = new File([blob], doc.name, { type: blob.type });
+                const url = await uploadParaImgBB(file);
+                if (!url) throw new Error("Falha no upload para ImgBB");
+
+                await addDoc(collection(db, 'fotos'), {
+                    categoria: categoriaAtual,
+                    url: url,
+                    legenda: `Importada do Drive: ${doc.name}`,
+                    dataEnvio: new Date(),
+                    enviadoPor: usuarioAtual,
+                    tipo: 'image'
+                });
+            } catch (err) {
+                console.error(`Erro com ${doc.name}:`, err);
+                if (statusDiv) statusDiv.innerHTML = `⚠️ Erro em ${doc.name}. Continue tentando.`;
+            }
+        }
+        carregarFotos(categoriaAtual, true);
+        iniciarSlideshow();
+        if (statusDiv) statusDiv.innerHTML = "✅ Importação concluída!";
+        fecharModal();
+    } else if (data.action === google.picker.Action.CANCEL) {
+        const statusDiv = document.getElementById('importStatus');
+        if (statusDiv) statusDiv.innerHTML = "❌ Cancelado.";
+    }
+}
+
+// Expor funções globalmente para que as bibliotecas do Google possam chamá-las
+window.gapiLoaded = gapiLoaded;
+window.gisLoaded = gisLoaded;
+
 // ==================== MODO SURPRESA ====================
 let modoSurpresa = false;
 function alternarModoSurpresa() {
@@ -65,7 +195,7 @@ if (!document.querySelector('#modo-surpresa-style')) {
     document.head.appendChild(styleSurpresa);
 }
 
-// ==================== IMPORTAR FOTOS (Google Drive / Instagram) ====================
+// ==================== IMPORTAR FOTOS (Google Drive) ====================
 function exibirModalImportar() {
     const modalBody = document.getElementById('modal-body');
     if (!modalBody) return;
@@ -73,18 +203,18 @@ function exibirModalImportar() {
         <h2>📥 Importar fotos</h2>
         <p style="margin-bottom: 1rem;">Selecione a origem:</p>
         <button id="importGoogleDriveBtn" class="btn-admin">📁 Google Drive</button>
-        <button id="importInstagramBtn" class="btn-admin">📸 Instagram</button>
+        <button id="importInstagramBtn" class="btn-admin">📸 Instagram (em breve)</button>
         <div id="importStatus" style="margin-top: 1rem;"></div>
     `;
     document.getElementById('modal').style.display = 'flex';
+
     const driveBtn = document.getElementById('importGoogleDriveBtn');
+    if (driveBtn) driveBtn.onclick = () => handleGoogleDriveAuth();
+
     const instaBtn = document.getElementById('importInstagramBtn');
-    const statusDiv = document.getElementById('importStatus');
-    if (driveBtn) driveBtn.onclick = () => {
-        if (statusDiv) statusDiv.innerHTML = "⚠️ Para usar o Google Drive, configure OAuth 2.0 e a API Picker.<br>Por enquanto, faça upload manual.";
-    };
     if (instaBtn) instaBtn.onclick = () => {
-        if (statusDiv) statusDiv.innerHTML = "⚠️ O Instagram Basic Display API requer aprovação do Meta.<br>Por enquanto, faça upload manual.";
+        const statusDiv = document.getElementById('importStatus');
+        if (statusDiv) statusDiv.innerHTML = "⚠️ Instagram ainda não integrado. Use upload manual.";
     };
 }
 
@@ -460,14 +590,12 @@ function solicitarPermissaoNotificacoes() {
 }
 
 // ==================== CONTADOR (CORRIGIDO) ====================
-// Referências seguras – aguarda o DOM antes de tentar acessar os elementos
 let elsContador = {
     meses: null, semanas: null, dias: null,
     horas: null, minutos: null, segundos: null
 };
 
 function atualizarContador() {
-    // Garantir que os elementos foram buscados
     if (!elsContador.meses) {
         elsContador.meses = document.getElementById('meses');
         elsContador.semanas = document.getElementById('semanas');
@@ -476,7 +604,6 @@ function atualizarContador() {
         elsContador.minutos = document.getElementById('minutos');
         elsContador.segundos = document.getElementById('segundos');
     }
-    // Só atualiza se todos os elementos existirem
     if (elsContador.meses && elsContador.semanas && elsContador.dias &&
         elsContador.horas && elsContador.minutos && elsContador.segundos) {
         const agora = new Date();
@@ -489,13 +616,11 @@ function atualizarContador() {
         elsContador.minutos.innerText = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         elsContador.segundos.innerText = Math.floor((diff % (1000 * 60)) / 1000);
     } else {
-        // Se ainda não disponível, tenta novamente no próximo ciclo
         setTimeout(atualizarContador, 100);
     }
 }
-// Inicia o contador quando o DOM estiver pronto, mas também já agenda a atualização periódica
 document.addEventListener('DOMContentLoaded', () => {
-    atualizarContador(); // primeira atualização
+    atualizarContador();
     setInterval(atualizarContador, 1000);
 });
 
