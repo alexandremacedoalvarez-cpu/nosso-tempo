@@ -38,59 +38,58 @@ let todasFotosCache = [];
 
 // ==================== CONFIGURAÇÕES DO GOOGLE DRIVE ====================
 const GOOGLE_CLIENT_ID = '241579865765-ak7eabusfoqi5fp639ts6n5umn17rsva.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'SUA_API_KEY_AQUI';      // ⚠️ Cole aqui a sua API Key gerada no Google Cloud
-const GOOGLE_APP_ID = '241579865765';            // Seu Project Number
+const GOOGLE_API_KEY = 'AIzaSyAtieN3l5st6DQoRBIiYyTe4ERAXzuBpXE';
+const GOOGLE_APP_ID = '241579865765';
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
-let tokenClient;
+let tokenClient = null;
 let accessToken = null;
-let pickerInited = false;
+let gapiInited = false;
 let gisInited = false;
 
-// ==================== FUNÇÕES DO GOOGLE DRIVE ====================
-function gapiLoaded() {
-    console.log("gapi loaded");
-    gapi.load('client:picker', initializePicker);
-}
-
-function gisLoaded() {
-    console.log("gis loaded");
-    if (google && google.accounts && google.accounts.oauth2) {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: SCOPES,
-            callback: '', // será definido depois
-        });
-        gisInited = true;
-        maybeEnableButtons();
-    } else {
-        console.error("Google Identity Services não disponível");
+// Função para inicializar o cliente OAuth (deve ser chamada quando a GIS estiver disponível)
+function initTokenClient() {
+    if (tokenClient) return;
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+        console.warn("Google Identity Services ainda não carregou. Tentando novamente em 200ms...");
+        setTimeout(initTokenClient, 200);
+        return;
     }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // será preenchido na hora da autenticação
+    });
+    gisInited = true;
+    console.log("✅ tokenClient inicializado com sucesso.");
 }
 
-async function initializePicker() {
-    await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
-    pickerInited = true;
-    maybeEnableButtons();
-}
-
-function maybeEnableButtons() {
-    if (pickerInited && gisInited) {
-        console.log("Picker e GIS prontos!");
+// Função para carregar a API do Google Picker
+function initGapi() {
+    if (typeof gapi === 'undefined') {
+        console.warn("gapi ainda não carregou. Tentando novamente...");
+        setTimeout(initGapi, 200);
+        return;
     }
+    gapi.load('client:picker', async () => {
+        await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+        gapiInited = true;
+        console.log("✅ GAPI e Picker inicializados.");
+    });
 }
 
+// Iniciar autenticação (chamada pelo botão)
 function handleGoogleDriveAuth() {
-    if (!gisInited || !tokenClient) {
-        console.error("GIS não inicializado. Aguarde o carregamento.");
-        alert("Aguarde um momento e tente novamente. Se persistir, recarregue a página.");
+    if (!tokenClient) {
+        console.error("Token client não inicializado.");
+        alert("APIs do Google ainda estão carregando. Tente novamente em 2 segundos.");
         return;
     }
     if (accessToken === null) {
         tokenClient.callback = async (response) => {
             if (response.error !== undefined) {
-                console.error(response);
-                alert("Erro na autenticação: " + response.error);
+                console.error("Erro na autenticação:", response);
+                alert("Erro ao autenticar. Verifique se seu e-mail está como usuário de teste.");
                 return;
             }
             accessToken = response.access_token;
@@ -105,6 +104,11 @@ function handleGoogleDriveAuth() {
 async function createPicker() {
     if (!accessToken) {
         console.error("Sem token de acesso");
+        return;
+    }
+    if (!gapiInited) {
+        console.warn("Picker ainda não inicializado. Tentando novamente...");
+        setTimeout(createPicker, 500);
         return;
     }
     const view = new google.picker.View(google.picker.ViewId.DOCS);
@@ -162,10 +166,6 @@ async function pickerCallback(data) {
     }
 }
 
-// Expor funções globalmente para que as bibliotecas do Google possam chamá-las
-window.gapiLoaded = gapiLoaded;
-window.gisLoaded = gisLoaded;
-
 // ==================== MODO SURPRESA ====================
 let modoSurpresa = false;
 function alternarModoSurpresa() {
@@ -180,7 +180,7 @@ function alternarModoSurpresa() {
     }
     localStorage.setItem('modoSurpresa', modoSurpresa);
 }
-// Estilo dinâmico para o modo surpresa (caso não esteja no CSS)
+// Estilo dinâmico para o modo surpresa
 if (!document.querySelector('#modo-surpresa-style')) {
     const styleSurpresa = document.createElement('style');
     styleSurpresa.id = 'modo-surpresa-style';
@@ -209,7 +209,13 @@ function exibirModalImportar() {
     document.getElementById('modal').style.display = 'flex';
 
     const driveBtn = document.getElementById('importGoogleDriveBtn');
-    if (driveBtn) driveBtn.onclick = () => handleGoogleDriveAuth();
+    if (driveBtn) driveBtn.onclick = () => {
+        if (!tokenClient) {
+            alert("APIs do Google ainda estão carregando. Tente novamente em 2 segundos.");
+        } else {
+            handleGoogleDriveAuth();
+        }
+    };
 
     const instaBtn = document.getElementById('importInstagramBtn');
     if (instaBtn) instaBtn.onclick = () => {
@@ -1339,6 +1345,10 @@ function inicializarNavegacao() {
 
 // ==================== EVENTO PRINCIPAL ====================
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa os clientes do Google Drive assim que as bibliotecas estiverem disponíveis
+    initTokenClient();
+    initGapi();
+
     // Modo surpresa
     const surpresaBtn = document.getElementById('surpresaBtn');
     if (surpresaBtn) surpresaBtn.addEventListener('click', alternarModoSurpresa);
