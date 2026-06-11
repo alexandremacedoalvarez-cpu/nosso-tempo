@@ -97,43 +97,22 @@ function updateSpotifyDeviceStatus(message) {
 }
 
 // ==================== INICIALIZAÇÃO DO PLAYER SPOTIFY ====================
-function initSpotifyPlayer() {
-    if (!spotifyToken) return;
+function initSpotify() {
+    spotifyToken = getSpotifyTokenFromURL();
+    const loginDiv = document.getElementById('spotifyLoginDiv');
+    const playerContainer = document.getElementById('spotifyPlayerContainer');
 
-    window.onSpotifyWebPlaybackSDKReady = () => {
-        spotifyPlayer = new Spotify.Player({
-            name: 'Nosso Tempo Player',
-            getOAuthToken: cb => { cb(spotifyToken); },
-            volume: 0.5
-        });
+    // Configura o botão de login (sempre)
+    setupSpotifyControls();
 
-        spotifyPlayer.addListener('ready', ({ device_id }) => {
-            spotifyDeviceId = device_id;
-            spotifyPlayerReady = true;
-            console.log('Spotify Player pronto', device_id);
-            updateSpotifyDeviceStatus('✅ Dispositivo conectado!');
-            spotifyFetch('me/player', {
-                method: 'PUT',
-                body: JSON.stringify({ device_ids: [device_id], play: false })
-            }).catch(e => console.warn('Erro ao transferir playback:', e));
-        });
-
-        spotifyPlayer.addListener('player_state_changed', state => {
-            if (state) {
-                const track = state.track_window.current_track;
-                document.getElementById('spotifyNowPlaying').innerHTML = `🎵 Tocando agora: <strong>${track.name}</strong> - ${track.artists.map(a => a.name).join(', ')}`;
-            } else {
-                document.getElementById('spotifyNowPlaying').innerHTML = 'Nada tocando no momento';
-            }
-        });
-
-        spotifyPlayer.addListener('not_ready', ({ device_id }) => {
-            spotifyPlayerReady = false;
-            updateSpotifyDeviceStatus('⚠️ Dispositivo desconectado');
-        });
-
-        spotifyPlayer.connect();
-    };
+    if (spotifyToken) {
+        if (loginDiv) loginDiv.style.display = 'none';
+        if (playerContainer) playerContainer.style.display = 'block';
+        initSpotifyPlayer();
+    } else {
+        if (loginDiv) loginDiv.style.display = 'block';
+        if (playerContainer) playerContainer.style.display = 'none';
+    }
 }
 
 async function transferPlaybackHere() {
@@ -281,9 +260,14 @@ function setupSpotifyControls() {
     const volumeSlider = document.getElementById('spotifyVolumeSlider');
     const volumeIcon = document.getElementById('spotifyVolumeIcon');
 
+    // Botão de login – SEMPRE configurado, independente de token
     if (loginBtn) {
         loginBtn.onclick = () => redirectToSpotifyLogin();
     }
+
+    // Os demais controles só devem ser configurados se o player estiver ativo (token existe)
+    if (!spotifyToken) return;
+
     if (searchBtn) {
         searchBtn.onclick = () => spotifySearch(searchInput.value);
     }
