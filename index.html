@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Nosso Tempo 💕 - Álbum Vivo do Relacionamento</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#b83b5e">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Slideshow container -->
+    <div id="slideshowContainer" class="slideshow-container"></div>
+    <div class="content-overlay">
+        <div class="container">
+            <header class="hero">
+                <div class="top-buttons">
+                    <div id="notificacaoIcone" style="cursor: pointer;">🔔 <span id="notificacaoBadge">0</span></div>
+                    <div class="action-buttons">
+                        <input type="text" id="globalSearchInput" placeholder="🔍 Buscar em tudo..." style="border-radius: 40px; padding: 0.5rem 1rem; min-width: 200px;">
+                        <select id="temaCorSelect" style="border-radius: 40px; padding: 0.5rem;">
+                            <option value="rosa">🌸 Rosa</option>
+                            <option value="roxo">💜 Roxo</option>
+                            <option value="azul">💙 Azul</option>
+                        </select>
+                        <button id="surpresaBtn" class="btn-admin">🎁 Modo Surpresa</button>
+                        <button id="compartilharLinkBtn" class="btn-admin">🔗 Link</button>
+                        <button id="compartilharBtn" class="btn-admin">📤 Compartilhar</button>
+                        <button id="backupBtn" class="btn-admin">💾 Backup</button>
+                        <button id="toggleThemeBtn" class="btn-admin">🌙 Modo Noturno</button>
+                    </div>
+                </div>
+                <h1 class="titulo-principal">✨ Nosso Tempo ✨</h1>
+                <div class="contador" id="contador">
+                    <span id="meses">0</span> meses •
+                    <span id="semanas">0</span> semanas •
+                    <span id="dias">0</span> dias •
+                    <span id="horas">0</span> horas •
+                    <span id="minutos">0</span> min •
+                    <span id="segundos">0</span> seg
+                </div>
+                <div class="perfil-seletor" id="perfilSeletor">
+                    <button class="perfil-btn" data-perfil="alexandre">🖤 Alexandre</button>
+                    <button class="perfil-btn" data-perfil="ana">💖 Ana Vitória</button>
+                </div>
+                <div class="usuario-atual" id="usuarioAtual" style="display: none;">
+                    Logado como: <strong id="nomeUsuario"></strong>
+                    <button id="trocarPerfilBtn">Trocar perfil</button>
+                </div>
+            </header>
+
+            <nav class="abas">
+                <button class="aba-btn ativo" data-aba="album">📷 Álbum</button>
+                <button class="aba-btn" data-aba="series">🎬 Filmes & Séries</button>
+                <button class="aba-btn" data-aba="viagens">✈️ Viagens</button>
+                <button class="aba-btn" data-aba="metas">🎯 Metas</button>
+                <button class="aba-btn" data-aba="timeline">📅 Linha do Tempo</button>
+                <button class="aba-btn" data-aba="calendario">📆 Calendário</button>
+                <button class="aba-btn" data-aba="estatisticas">📊 Estatísticas</button>
+                <button class="aba-btn" data-aba="chat">💬 Chat</button>
+                <button class="aba-btn" data-aba="musica">🎶 Música</button>
+                <button class="aba-btn" data-aba="spotify">🎵 Spotify</button>
+            </nav>
+
+            <!-- Álbum -->
+            <main class="conteudo-aba" id="conteudoAlbum">
+                <h2>📷 Álbum de memórias</h2>
+                <div class="categorias-album">
+                    <button class="cat-btn ativo" data-cat="nossos-meses">📆 Nossos Meses</button>
+                    <button class="cat-btn" data-cat="conquistas">🏆 Conquistas</button>
+                    <button class="cat-btn" data-cat="viagens-realizadas">✈️ Viagens Realizadas</button>
+                    <button class="cat-btn" data-cat="gatinhos">🐱 Nossos Gatinhos</button>
+                    <button class="cat-btn" data-cat="momentos-especiais">💖 Momentos Especiais</button>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <input type="month" id="filtroData" placeholder="Filtrar por mês" style="flex: 1;">
+                    <select id="ordenacaoAlbum" style="flex: 1;">
+                        <option value="recente">📅 Mais recente</option>
+                        <option value="antigo">📅 Mais antigo</option>
+                        <option value="az">🔤 A-Z (legenda)</option>
+                    </select>
+                    <button id="importarBtn" class="btn-admin">📥 Importar fotos</button>
+                </div>
+                <div id="albumGrid" class="grid-cards"></div>
+                <button id="carregarMaisBtn" class="btn-admin" style="margin-top: 1rem;">+ Carregar mais fotos</button>
+                <button id="adicionarFotoBtn" class="btn-admin">+ Adicionar foto/vídeo</button>
+            </main>
+
+            <!-- Filmes & Séries -->
+            <main class="conteudo-aba" id="conteudoSeries" style="display: none;">
+                <h2>🎞️ Filmes & Séries que vimos juntos</h2>
+                <button id="adicionarSerieBtn" class="btn-admin">+ Adicionar série/filme</button>
+                <div id="listaSeries" class="grid-cards"></div>
+            </main>
+
+            <!-- Viagens -->
+            <main class="conteudo-aba" id="conteudoViagens" style="display: none;">
+                <h2>✈️ Planejamento de viagens</h2>
+                <button id="adicionarViagemBtn" class="btn-admin">+ Nova viagem planejada</button>
+                <div id="listaViagens" class="grid-cards"></div>
+            </main>
+
+            <!-- Metas -->
+            <main class="conteudo-aba" id="conteudoMetas" style="display: none;">
+                <h2>🎯 Nossas Metas</h2>
+                <button id="adicionarMetaBtn" class="btn-admin">+ Nova meta</button>
+                <div id="listaMetas" class="grid-cards"></div>
+            </main>
+
+            <!-- Linha do Tempo -->
+            <main class="conteudo-aba" id="conteudoTimeline" style="display: none;">
+                <h2>📅 Linha do Tempo do Nosso Amor</h2>
+                <button id="adicionarTimelineBtn" class="btn-admin">+ Adicionar evento (Alexandre)</button>
+                <div id="listaTimeline" class="timeline-container"></div>
+            </main>
+
+            <!-- Calendário -->
+            <main class="conteudo-aba" id="conteudoCalendario" style="display: none;">
+                <h2>📆 Calendário de Eventos</h2>
+                <div id="calendar"></div>
+            </main>
+
+            <!-- Estatísticas -->
+            <main class="conteudo-aba" id="conteudoEstatisticas" style="display: none;">
+                <h2>📊 Estatísticas do Relacionamento</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+                    <div style="flex: 1; min-width: 250px;"><canvas id="fotosPorCategoriaChart" width="300" height="300"></canvas></div>
+                    <div style="flex: 1; min-width: 250px;"><canvas id="metasStatusChart" width="300" height="300"></canvas></div>
+                    <div style="flex: 1; min-width: 250px;"><canvas id="seriesTipoChart" width="300" height="300"></canvas></div>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <h3>📈 Evolução mensal de fotos</h3>
+                    <canvas id="evolucaoChart" width="800" height="400"></canvas>
+                </div>
+                <div style="margin-top: 2rem; background: var(--cor-card-fundo); border-radius: 28px; padding: 1.5rem;">
+                    <h3>📌 Resumo</h3>
+                    <div id="resumoEstatisticas"></div>
+                </div>
+            </main>
+
+            <!-- Chat -->
+            <main class="conteudo-aba" id="conteudoChat" style="display: none;">
+                <h2>💬 Bate-papo do casal</h2>
+                <div id="chatMessages" style="height: 400px; overflow-y: auto; background: var(--cor-card-fundo); border-radius: 28px; padding: 1rem; margin-bottom: 1rem;"></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="chatInput" placeholder="Digite sua mensagem..." style="flex: 1;">
+                    <button id="enviarMsgBtn" class="btn-admin">Enviar</button>
+                </div>
+            </main>
+
+            <!-- Música Local -->
+            <main class="conteudo-aba" id="conteudoMusica" style="display: none;">
+                <h2>🎶 Nossa Trilha Sonora</h2>
+                <div class="player-container">
+                    <div class="player-header">
+                        <img id="playerThumb" class="player-thumb" src="https://placehold.co/120x120/8B1E3F/FFFFFF?text=Carregando" alt="Capa">
+                        <div class="player-info">
+                            <div id="playerTitle" class="player-title">Carregando...</div>
+                            <div id="playerChannel" class="player-channel"></div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button id="playPauseBtn" class="control-btn">▶️</button>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.35" style="width: 100px;">
+                        <span id="volumeIcon">🔊</span>
+                    </div>
+                    <div id="timeInfo" class="time-info">--:-- / --:--</div>
+                </div>
+            </main>
+
+            <!-- Spotify -->
+            <main class="conteudo-aba" id="conteudoSpotify" style="display: none;">
+                <h2>🎵 Spotify - Nossa Playlist</h2>
+                <div class="spotify-login" id="spotifyLoginDiv">
+                    <button id="loginSpotifyBtn" class="btn-admin">🔑 Conectar com Spotify</button>
+                </div>
+                <div class="spotify-player" id="spotifyPlayerContainer" style="display: none;">
+                    <div class="controls">
+                        <button id="spotifyPlayPauseBtn" class="control-btn">▶️</button>
+                        <button id="spotifyNextBtn" class="control-btn">⏩</button>
+                        <button id="spotifyPrevBtn" class="control-btn">⏪</button>
+                        <input type="range" id="spotifyVolumeSlider" min="0" max="1" step="0.01" value="0.5" style="width: 100px;">
+                        <span id="spotifyVolumeIcon">🔊</span>
+                    </div>
+                    <div class="player-info">
+                        <div id="spotifyNowPlaying">Nada tocando no momento</div>
+                        <div id="spotifyDeviceStatus"></div>
+                    </div>
+                    <div class="spotify-search">
+                        <input type="text" id="spotifySearchInput" placeholder="Buscar música, artista ou playlist...">
+                        <button id="spotifySearchBtn" class="btn-admin">Buscar</button>
+                    </div>
+                    <div id="spotifySearchResults" class="grid-cards" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modais -->
+    <div id="lightboxModal" class="modal" style="display: none;">
+        <div class="modal-conteudo lightbox-content" style="max-width: 90vw; width: auto; background: transparent; box-shadow: none; padding: 0;">
+            <span id="lightboxFechar" class="fechar" style="color: white; font-size: 3rem; position: absolute; top: 10px; right: 20px; z-index: 2100;">&times;</span>
+            <div id="lightboxInner" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
+                <button id="lightboxPrev" style="background: rgba(0,0,0,0.5); color: white; font-size: 3rem; border: none; cursor: pointer; padding: 0 1rem;">&lt;</button>
+                <img id="lightboxImg" style="max-width: 70vw; max-height: 70vh; object-fit: contain; border-radius: 16px;">
+                <button id="lightboxNext" style="background: rgba(0,0,0,0.5); color: white; font-size: 3rem; border: none; cursor: pointer; padding: 0 1rem;">&gt;</button>
+            </div>
+            <div id="lightboxCaption" style="text-align: center; color: white; margin-top: 1rem; background: rgba(0,0,0,0.6); padding: 0.5rem; border-radius: 40px;"></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="modalDetalhesEvento" class="modal" style="display: none;">
+        <div class="modal-conteudo timeline-detail">
+            <span class="fechar">&times;</span>
+            <div id="modalDetalhesBody"></div>
+        </div>
+    </div>
+
+    <div id="modalMapa" class="modal" style="display: none;">
+        <div class="modal-conteudo" style="max-width: 90vw; width: 1000px; height: 80vh;">
+            <span class="fechar" id="fecharMapa">&times;</span>
+            <h2>🗺️ Mapa das Nossas Viagens</h2>
+            <button id="traçarRotaBtn" class="btn-admin" style="margin-bottom: 1rem;">🚗 Traçar rota entre locais visitados</button>
+            <div id="mapaContainer" style="height: calc(100% - 100px); width: 100%; border-radius: 20px; overflow: hidden;"></div>
+        </div>
+    </div>
+
+    <button id="mapaMundiBtn" class="mapa-flutuante" title="Ver mapa das viagens">🌍</button>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOYtycA4Y1zwEsVBwZZzIbwUw-dzuYHJM",
+            authDomain: "memorias-alex-ana.firebaseapp.com",
+            projectId: "memorias-alex-ana",
+            storageBucket: "memorias-alex-ana.firebasestorage.app",
+            messagingSenderId: "238254067799",
+            appId: "1:238254067799:web:b56f04cbee8ab5b1635312",
+            measurementId: "G-Z11M3V6RR6"
+        };
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        window.db = db;
+        console.log("🔥 Firebase conectado!");
+    </script>
+    <!-- Google APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <!-- Leaflet e Routing Machine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <script src="script.js" type="module"></script>
+</body>
+</html>
