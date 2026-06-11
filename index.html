@@ -7,18 +7,16 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#b83b5e">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
-    <!-- OTIMIZAÇÃO: Preconnect para acelerar o download das fontes -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
-    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -72,6 +70,7 @@
                 <button class="aba-btn" data-aba="estatisticas">📊 Estatísticas</button>
                 <button class="aba-btn" data-aba="chat">💬 Chat</button>
                 <button class="aba-btn" data-aba="musica">🎶 Música</button>
+                <button class="aba-btn" data-aba="spotify">🎵 Spotify</button>
             </nav>
 
             <!-- Álbum -->
@@ -160,7 +159,7 @@
                 </div>
             </main>
 
-            <!-- Música -->
+            <!-- Música Local -->
             <main class="conteudo-aba" id="conteudoMusica" style="display: none;">
                 <h2>🎶 Nossa Trilha Sonora</h2>
                 <div class="player-container">
@@ -175,13 +174,34 @@
                         <button id="playPauseBtn" class="control-btn">▶️</button>
                         <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.35" style="width: 100px;">
                         <span id="volumeIcon">🔊</span>
-                        <button id="spotifyBtn" class="control-btn" style="font-size: 1rem;">🎵 Spotify</button>
                     </div>
                     <div id="timeInfo" class="time-info">--:-- / --:--</div>
-                    <div id="spotifyEmbed" style="display: none; margin-top: 1rem; text-align: center;">
-                        <button id="spotifyLogoutBtn" class="btn-admin" style="margin-bottom: 0.5rem;">Sair do Spotify</button>
-                        <div id="spotifyPlayer"></div>
+                </div>
+            </main>
+
+            <!-- Spotify -->
+            <main class="conteudo-aba" id="conteudoSpotify" style="display: none;">
+                <h2>🎵 Spotify - Nossa Playlist</h2>
+                <div class="spotify-login" id="spotifyLoginDiv">
+                    <button id="loginSpotifyBtn" class="btn-admin">🔑 Conectar com Spotify</button>
+                </div>
+                <div class="spotify-player" id="spotifyPlayerContainer" style="display: none;">
+                    <div class="controls">
+                        <button id="spotifyPlayPauseBtn" class="control-btn">▶️</button>
+                        <button id="spotifyNextBtn" class="control-btn">⏩</button>
+                        <button id="spotifyPrevBtn" class="control-btn">⏪</button>
+                        <input type="range" id="spotifyVolumeSlider" min="0" max="1" step="0.01" value="0.5" style="width: 100px;">
+                        <span id="spotifyVolumeIcon">🔊</span>
                     </div>
+                    <div class="player-info">
+                        <div id="spotifyNowPlaying">Nada tocando no momento</div>
+                        <div id="spotifyDeviceStatus"></div>
+                    </div>
+                    <div class="spotify-search">
+                        <input type="text" id="spotifySearchInput" placeholder="Buscar música, artista ou playlist...">
+                        <button id="spotifySearchBtn" class="btn-admin">Buscar</button>
+                    </div>
+                    <div id="spotifySearchResults" class="grid-cards" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </main>
         </div>
@@ -245,18 +265,16 @@
         window.db = db;
         console.log("🔥 Firebase conectado!");
     </script>
-
-    <!-- OTIMIZAÇÃO: Bibliotecas Pesadas movidas para o final com DEFER -->
-    <script defer src="https://apis.google.com/js/api.js"></script>
-    <script defer src="https://accounts.google.com/gsi/client"></script>
-    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script defer src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script defer src="https://sdk.scdn.co/spotify-player.js"></script>
-
-    <!-- Seu script principal -->
+    <!-- Google APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <!-- Leaflet e Routing Machine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     <script src="script.js" type="module"></script>
 </body>
 </html>

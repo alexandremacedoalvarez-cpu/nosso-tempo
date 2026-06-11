@@ -918,3 +918,61 @@ body.modo-surpresa .contador::after {
     font-size: 1.8rem;
     display: block;
 }
+/* Spotify Player */
+.spotify-search {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+#spotifySearchInput {
+    flex: 1;
+}
+.spotify-player {
+    background: var(--cor-card-fundo);
+    border-radius: 28px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+.player-info {
+    margin: 1rem 0;
+    text-align: center;
+}
+#spotifyNowPlaying {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+#spotifyDeviceStatus {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+/* Spotify Player */
+.spotify-search {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+#spotifySearchInput {
+    flex: 1;
+}
+.spotify-player {
+    background: var(--cor-card-fundo);
+    border-radius: 28px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+#spotifyNowPlaying {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+#spotifyDeviceStatus {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+.spotify-player .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
