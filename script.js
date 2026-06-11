@@ -1,6 +1,11 @@
 // ==================== CONFIGURAÇÃO GLOBAL PARA SPOTIFY (EVITA ERRO) ====================
-window.onSpotifyWebPlaybackSDKReady = function() {
-    console.log("Spotify SDK ready");
+// Esta função será chamada automaticamente pelo Spotify Web Playback SDK quando estiver pronto
+window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log("Spotify SDK ready - função global chamada");
+    // Se já tiver token e o player não foi criado, cria agora
+    if (window.spotifyToken && !window.spotifyPlayer) {
+        initSpotifyPlayerInternal();
+    }
 };
 
 // ==================== IMPORTAÇÕES ====================
@@ -52,6 +57,10 @@ let spotifyDeviceId = null;
 let spotifyPlayer = null;
 let spotifyPlayerReady = false;
 
+// Variáveis globais para acesso nas funções
+window.spotifyToken = spotifyToken;
+window.spotifyPlayer = null;
+
 // ==================== FUNÇÕES AUXILIARES DO SPOTIFY ====================
 async function spotifyFetch(endpoint, options = {}) {
     if (!spotifyToken) throw new Error('Não autenticado');
@@ -97,22 +106,66 @@ function updateSpotifyDeviceStatus(message) {
 }
 
 // ==================== INICIALIZAÇÃO DO PLAYER SPOTIFY ====================
-function initSpotify() {
-    spotifyToken = getSpotifyTokenFromURL();
-    const loginDiv = document.getElementById('spotifyLoginDiv');
-    const playerContainer = document.getElementById('spotifyPlayerContainer');
-
-    // Configura o botão de login (sempre)
-    setupSpotifyControls();
-
-    if (spotifyToken) {
-        if (loginDiv) loginDiv.style.display = 'none';
-        if (playerContainer) playerContainer.style.display = 'block';
-        initSpotifyPlayer();
-    } else {
-        if (loginDiv) loginDiv.style.display = 'block';
-        if (playerContainer) playerContainer.style.display = 'none';
+function initSpotifyPlayerInternal() {
+    if (!spotifyToken) {
+        console.warn("initSpotifyPlayerInternal: sem token");
+        return;
     }
+    if (spotifyPlayer) {
+        console.log("Player já inicializado");
+        return;
+    }
+    console.log("Inicializando Spotify Player com token:", spotifyToken.substring(0, 10) + "...");
+    spotifyPlayer = new Spotify.Player({
+        name: 'Nosso Tempo Player',
+        getOAuthToken: cb => { cb(spotifyToken); },
+        volume: 0.5
+    });
+
+    spotifyPlayer.addListener('ready', ({ device_id }) => {
+        spotifyDeviceId = device_id;
+        spotifyPlayerReady = true;
+        console.log('Spotify Player pronto', device_id);
+        updateSpotifyDeviceStatus('✅ Dispositivo conectado!');
+        // Transferir playback para este dispositivo
+        spotifyFetch('me/player', {
+            method: 'PUT',
+            body: JSON.stringify({ device_ids: [device_id], play: false })
+        }).catch(e => console.warn('Erro ao transferir playback:', e));
+    });
+
+    spotifyPlayer.addListener('player_state_changed', state => {
+        if (state) {
+            const track = state.track_window.current_track;
+            const nowPlayingDiv = document.getElementById('spotifyNowPlaying');
+            if (nowPlayingDiv) {
+                nowPlayingDiv.innerHTML = `🎵 Tocando agora: <strong>${track.name}</strong> - ${track.artists.map(a => a.name).join(', ')}`;
+            }
+        } else {
+            const nowPlayingDiv = document.getElementById('spotifyNowPlaying');
+            if (nowPlayingDiv) nowPlayingDiv.innerHTML = 'Nada tocando no momento';
+        }
+    });
+
+    spotifyPlayer.addListener('not_ready', ({ device_id }) => {
+        spotifyPlayerReady = false;
+        updateSpotifyDeviceStatus('⚠️ Dispositivo desconectado');
+    });
+
+    spotifyPlayer.addListener('initialization_error', ({ message }) => {
+        console.error('Erro na inicialização do Spotify:', message);
+        updateSpotifyDeviceStatus('❌ Erro na inicialização');
+    });
+
+    spotifyPlayer.addListener('authentication_error', ({ message }) => {
+        console.error('Erro de autenticação do Spotify:', message);
+        updateSpotifyDeviceStatus('❌ Erro de autenticação');
+        localStorage.removeItem('spotify_token');
+        window.location.reload();
+    });
+
+    spotifyPlayer.connect();
+    window.spotifyPlayer = spotifyPlayer;
 }
 
 async function transferPlaybackHere() {
@@ -297,13 +350,23 @@ function setupSpotifyControls() {
 // ==================== INICIALIZAÇÃO DO SPOTIFY ====================
 function initSpotify() {
     spotifyToken = getSpotifyTokenFromURL();
+    window.spotifyToken = spotifyToken;
     const loginDiv = document.getElementById('spotifyLoginDiv');
     const playerContainer = document.getElementById('spotifyPlayerContainer');
+
+    // Configura o botão de login (sempre)
+    setupSpotifyControls();
+
     if (spotifyToken) {
         if (loginDiv) loginDiv.style.display = 'none';
         if (playerContainer) playerContainer.style.display = 'block';
-        initSpotifyPlayer();
-        setupSpotifyControls();
+        // Inicializa o player imediatamente, se o SDK já tiver carregado
+        if (typeof Spotify !== 'undefined' && Spotify.Player) {
+            initSpotifyPlayerInternal();
+        } else {
+            console.log("Aguardando SDK do Spotify carregar...");
+            // O SDK chamará a função global quando estiver pronto
+        }
     } else {
         if (loginDiv) loginDiv.style.display = 'block';
         if (playerContainer) playerContainer.style.display = 'none';
