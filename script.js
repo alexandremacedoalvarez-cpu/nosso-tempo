@@ -43,7 +43,7 @@ let todasFotosCache = [];
 
 // ==================== CONFIGURAÇÕES DO SPOTIFY ====================
 const SPOTIFY_CLIENT_ID = '888a34e34c574abea2a14a0392be64bd';
-const SPOTIFY_REDIRECT_URI = window.location.href.split('#')[0];
+const SPOTIFY_REDIRECT_URI = window.location.href.split('?')[0]; // Remove query string
 const SPOTIFY_SCOPES = [
     'streaming',
     'user-read-email',
@@ -61,7 +61,83 @@ let spotifyPlayerReady = false;
 window.spotifyToken = spotifyToken;
 window.spotifyPlayer = null;
 
-// ==================== FUNÇÕES AUXILIARES DO SPOTIFY ====================
+// ==================== FUNÇÕES DE PKCE ====================
+function generateCodeVerifier(length = 128) {
+    let text = '';
+    let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    for (let i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+
+async function generateCodeChallenge(codeVerifier) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+async function exchangeCodeForToken(code, codeVerifier) {
+    const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: SPOTIFY_REDIRECT_URI,
+        client_id: SPOTIFY_CLIENT_ID,
+        code_verifier: codeVerifier
+    });
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body
+    });
+    const data = await response.json();
+    if (data.access_token) {
+        localStorage.setItem('spotify_token', data.access_token);
+        if (data.refresh_token) localStorage.setItem('spotify_refresh_token', data.refresh_token);
+        window.location.href = SPOTIFY_REDIRECT_URI; // Recarrega a página sem parâmetros
+    } else {
+        console.error('Erro ao obter token:', data);
+        alert('Falha na autenticação do Spotify. Tente novamente.');
+    }
+}
+
+function getSpotifyTokenFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const savedVerifier = localStorage.getItem('spotify_code_verifier');
+    if (code && savedVerifier) {
+        exchangeCodeForToken(code, savedVerifier);
+        localStorage.removeItem('spotify_code_verifier');
+        return null;
+    }
+    return localStorage.getItem('spotify_token');
+}
+
+function redirectToSpotifyLogin() {
+    const codeVerifier = generateCodeVerifier();
+    localStorage.setItem('spotify_code_verifier', codeVerifier);
+    generateCodeChallenge(codeVerifier).then(codeChallenge => {
+        const authUrl = new URL('https://accounts.spotify.com/authorize');
+        authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
+        authUrl.searchParams.append('response_type', 'code');
+        authUrl.searchParams.append('redirect_uri', SPOTIFY_REDIRECT_URI);
+        authUrl.searchParams.append('code_challenge_method', 'S256');
+        authUrl.searchParams.append('code_challenge', codeChallenge);
+        authUrl.searchParams.append('scope', SPOTIFY_SCOPES);
+        window.location.href = authUrl.toString();
+    });
+}
+
+function updateSpotifyDeviceStatus(message) {
+    const statusDiv = document.getElementById('spotifyDeviceStatus');
+    if (statusDiv) statusDiv.innerHTML = message;
+}
+
+// ==================== FUNÇÕES DE API DO SPOTIFY (JÁ EXISTENTES, MANTIDAS) ====================
 async function spotifyFetch(endpoint, options = {}) {
     if (!spotifyToken) throw new Error('Não autenticado');
     const response = await fetch(`https://api.spotify.com/v1/${endpoint}`, {
@@ -81,28 +157,6 @@ async function spotifyFetch(endpoint, options = {}) {
         throw new Error(`Erro na API: ${response.status}`);
     }
     return response.json();
-}
-
-function getSpotifyTokenFromURL() {
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const token = params.get('access_token');
-    if (token) {
-        localStorage.setItem('spotify_token', token);
-        window.location.hash = '';
-        return token;
-    }
-    return localStorage.getItem('spotify_token');
-}
-
-function redirectToSpotifyLogin() {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_SCOPES)}`;
-    window.location.href = authUrl;
-}
-
-function updateSpotifyDeviceStatus(message) {
-    const statusDiv = document.getElementById('spotifyDeviceStatus');
-    if (statusDiv) statusDiv.innerHTML = message;
 }
 
 // ==================== INICIALIZAÇÃO DO PLAYER SPOTIFY ====================
