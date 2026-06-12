@@ -42,6 +42,21 @@ body.modo-noturno {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* ==================== MODO SURPRESA ==================== */
+body.modo-surpresa #meses,
+body.modo-surpresa #semanas,
+body.modo-surpresa #dias,
+body.modo-surpresa #horas,
+body.modo-surpresa #minutos,
+body.modo-surpresa #segundos {
+    display: none;
+}
+body.modo-surpresa .contador::after {
+    content: "💕 Juntos há " attr(data-anos) " anos 💕";
+    font-size: 1.8rem;
+    display: block;
+}
+
 /* ==================== SLIDESHOW DE FUNDO ==================== */
 .slideshow-container {
     position: fixed;
@@ -80,7 +95,7 @@ body {
 .content-overlay { position: relative; z-index: 1; }
 .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
 
-/* ==================== CABEÇALHO ORGANIZADO ==================== */
+/* ==================== CABEÇALHO ==================== */
 .top-buttons {
     display: flex;
     justify-content: space-between;
@@ -138,30 +153,39 @@ body {
     color: var(--cor-destaque-hover);
 }
 
-/* ==================== BOTÕES GERAIS ==================== */
-.perfil-seletor button, .usuario-atual button, .btn-admin, .aba-btn, button[type="submit"], .control-btn {
-    background: var(--cor-botao-fundo);
-    backdrop-filter: blur(4px);
+/* ==================== BOTÕES ==================== */
+.perfil-seletor button,
+.usuario-atual button,
+.btn-admin,
+.aba-btn,
+button[type="submit"],
+.control-btn {
+    background: linear-gradient(135deg, #fff5f7, #ffe0e6);
     border: 1px solid var(--cor-borda);
+    border-radius: 40px;
     color: var(--cor-botao-texto);
     font-weight: 600;
     padding: 0.7rem 1.4rem;
     margin: 0 0.4rem;
-    border-radius: 60px;
     cursor: pointer;
     transition: all 0.25s ease;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     font-family: 'Poppins', sans-serif;
 }
-.perfil-seletor button:hover, .usuario-atual button:hover, .btn-admin:hover, .aba-btn:hover, button[type="submit"]:hover, .control-btn:hover {
-    background: var(--cor-destaque-hover);
+.perfil-seletor button:hover,
+.usuario-atual button:hover,
+.btn-admin:hover,
+.aba-btn:hover,
+button[type="submit"]:hover,
+.control-btn:hover {
+    background: linear-gradient(135deg, #8b1e3f, #6b142e);
     color: white;
-    transform: translateY(-4px);
-    box-shadow: 0 12px 20px rgba(139, 30, 63, 0.3);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 18px rgba(139, 30, 63, 0.3);
     border-color: var(--cor-destaque-hover);
 }
 .aba-btn.ativo {
-    background: var(--cor-destaque-hover);
+    background: linear-gradient(135deg, #8b1e3f, #6b142e);
     color: white;
     box-shadow: 0 6px 14px rgba(139, 30, 63, 0.4);
 }
@@ -214,7 +238,7 @@ body {
 }
 .conteudo-aba.fade-out { opacity: 0; transform: translateY(10px); }
 
-/* ==================== CARDS (geral) ==================== */
+/* ==================== CARDS ==================== */
 .grid-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -238,6 +262,12 @@ body {
     object-fit: cover;
     border-bottom: 3px solid var(--cor-borda);
 }
+.card video {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: #000;
+}
 .card-content { padding: 1.2rem; }
 .card h3 { color: var(--cor-destaque); margin-bottom: 0.5rem; }
 
@@ -256,17 +286,8 @@ body {
     margin-top: 1rem;
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
-.meta-botoes button {
-    background: #8b1e3f;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 4px 12px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.meta-botoes button:hover { background: #b83b5e; transform: scale(1.02); }
 
 /* ==================== MODAL ==================== */
 .modal {
@@ -300,6 +321,7 @@ body {
     font-size: 2rem;
     cursor: pointer;
     color: var(--cor-destaque);
+    line-height: 1;
 }
 
 /* ==================== AVALIAÇÕES ==================== */
@@ -341,6 +363,7 @@ input, textarea, select {
     font-family: 'Poppins', sans-serif;
     color: var(--cor-texto-principal);
 }
+textarea { border-radius: 20px; resize: vertical; }
 
 /* ==================== CATEGORIAS DO ÁLBUM ==================== */
 .categorias-album {
@@ -358,8 +381,13 @@ input, textarea, select {
     border-radius: 40px;
     cursor: pointer;
     transition: all 0.2s;
+    font-family: 'Poppins', sans-serif;
 }
 .cat-btn.ativo {
+    background: var(--cor-destaque-hover);
+    color: white;
+}
+.cat-btn:hover {
     background: var(--cor-destaque-hover);
     color: white;
 }
@@ -416,10 +444,7 @@ input, textarea, select {
     gap: 1.2rem;
     align-items: center;
 }
-.timeline-fotos {
-    flex: 0 0 120px;
-    margin: 0;
-}
+.timeline-fotos { flex: 0 0 120px; margin: 0; }
 .timeline-fotos img {
     width: 120px;
     height: 120px;
@@ -433,21 +458,14 @@ input, textarea, select {
     transform: scale(1.05);
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
-.timeline-text {
-    flex: 1;
-    min-width: 180px;
-}
+.timeline-text { flex: 1; min-width: 180px; }
 .timeline-data {
     font-size: 0.9rem;
     color: var(--cor-destaque-hover);
     font-weight: 600;
     margin-bottom: 0.5rem;
 }
-.timeline-card h3 {
-    color: var(--cor-destaque);
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-}
+.timeline-card h3 { color: var(--cor-destaque); margin-bottom: 0.5rem; font-size: 1.2rem; }
 .timeline-card p {
     font-size: 0.9rem;
     opacity: 0.9;
@@ -544,45 +562,59 @@ input, textarea, select {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     border: 2px solid var(--cor-borda);
 }
-.player-info {
-    flex: 1;
-    min-width: 180px;
-}
+.player-info { flex: 1; min-width: 180px; }
 .player-title {
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--cor-destaque);
     margin-bottom: 0.25rem;
 }
-.player-channel {
-    font-size: 0.85rem;
-    color: var(--cor-destaque-hover);
-    opacity: 0.8;
-}
+.player-channel { font-size: 0.85rem; color: var(--cor-destaque-hover); opacity: 0.8; }
 .controls {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
     margin-bottom: 1rem;
+    align-items: center;
 }
-.control-btn {
-    font-size: 1.8rem;
-    padding: 0.6rem 1.2rem;
+.control-btn { font-size: 1.8rem; padding: 0.6rem 1.2rem; }
+.time-info { text-align: center; font-size: 0.8rem; color: var(--cor-destaque-hover); margin: 0.5rem 0; }
+
+/* ==================== PLAYER SPOTIFY ==================== */
+.spotify-player {
+    background: var(--cor-card-fundo);
+    border-radius: 28px;
+    padding: 1.5rem;
+    margin: 1rem 0;
 }
-.time-info {
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--cor-destaque-hover);
-    margin: 0.5rem 0;
+.spotify-player .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
 }
+.spotify-search {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+.spotify-search #spotifySearchInput { flex: 1; }
+#spotifyNowPlaying { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
+#spotifyDeviceStatus { font-size: 0.8rem; opacity: 0.7; }
+#spotifyEmbed {
+    background: var(--cor-card-fundo);
+    border-radius: 28px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+#spotifyEmbed iframe { width: 100%; border-radius: 20px; }
 
 /* ==================== CHUVA DE CORAÇÕES ==================== */
 .heart-rain {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none;
     z-index: 9999;
     overflow: hidden;
@@ -594,7 +626,7 @@ input, textarea, select {
     font-size: 20px;
 }
 @keyframes fall {
-    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+    0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
 }
 
@@ -617,34 +649,7 @@ input, textarea, select {
 .special-date-banner:hover { transform: scale(1.05); }
 @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-/* ==================== LISTA DE DATAS ESPECIAIS ==================== */
-.datas-especiais-lista {
-    background: var(--cor-card-fundo);
-    border-radius: 28px;
-    padding: 1rem;
-    margin-top: 1rem;
-    max-height: 200px;
-    overflow-y: auto;
-}
-.data-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--cor-borda);
-}
-.data-item .data { font-weight: bold; color: var(--cor-destaque); }
-.data-item .mensagem { flex: 1; margin-left: 1rem; }
-.data-item button {
-    background: var(--cor-destaque-hover);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 4px 12px;
-    cursor: pointer;
+    to   { transform: translateX(0); opacity: 1; }
 }
 
 /* ==================== NOTIFICAÇÕES ==================== */
@@ -704,24 +709,8 @@ dialog input, dialog textarea, dialog select {
     background: var(--cor-input-fundo);
     color: var(--cor-texto-principal);
 }
-.dialog-buttons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
+.dialog-buttons { display: flex; gap: 1rem; margin-top: 1.5rem; }
 .dialog-buttons button { flex: 1; }
-.local-data-group { margin: 0.5rem 0; }
-.local-data-group label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-right: 1rem;
-    cursor: pointer;
-}
-.local-data-group input[type="radio"] { width: auto; margin: 0; }
-.local-data-exact, .local-data-vague { display: block; margin-top: 0.5rem; }
-.local-imagem-url, .local-imagem-upload { margin-top: 0.5rem; }
-.local-imagem-url input, .local-imagem-upload input { width: 100%; }
 
 /* ==================== LIGHTBOX ==================== */
 .lightbox-content { background: rgba(0,0,0,0.9); }
@@ -739,11 +728,7 @@ dialog input, dialog textarea, dialog select {
 #lightboxPrev:hover, #lightboxNext:hover { background: rgba(0,0,0,0.8); }
 
 /* ==================== CALENDÁRIO ==================== */
-.fc {
-    background: var(--cor-card-fundo);
-    border-radius: 28px;
-    padding: 1rem;
-}
+.fc { background: var(--cor-card-fundo); border-radius: 28px; padding: 1rem; }
 .fc-event { background: var(--cor-destaque); border: none; }
 
 /* ==================== GRÁFICOS ==================== */
@@ -762,20 +747,9 @@ canvas {
     margin-bottom: 0.5rem;
     max-width: 80%;
 }
-.chat-mensagem.alexandre {
-    background: #b83b5e;
-    color: white;
-    margin-left: auto;
-}
-.chat-mensagem.ana {
-    background: #f0f0f0;
-    color: #333;
-}
-.chat-mensagem small {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    display: block;
-}
+.chat-mensagem.alexandre { background: #b83b5e; color: white; margin-left: auto; }
+.chat-mensagem.ana { background: #f0f0f0; color: #333; }
+.chat-mensagem small { font-size: 0.7rem; opacity: 0.7; display: block; }
 
 /* ==================== RESPONSIVIDADE ==================== */
 @media (max-width: 768px) {
@@ -814,17 +788,13 @@ body.modo-noturno #comentariosFilme {
     background: rgba(30, 15, 20, 0.7);
     color: #f0e6e8;
 }
-body.modo-noturno .comentarios-ep > div,
-body.modo-noturno #comentariosFilme > div,
 body.modo-noturno .comentarios-ep div,
 body.modo-noturno #comentariosFilme div {
-    background: rgba(50, 25, 30, 0.9) !important;
-    color: #ffb7c5 !important;
+    background: rgba(50, 25, 30, 0.9);
+    color: #ffb7c5;
 }
 body.modo-noturno .comentarios-ep p,
-body.modo-noturno #comentariosFilme p {
-    color: #f0e6e8 !important;
-}
+body.modo-noturno #comentariosFilme p { color: #f0e6e8; }
 body.modo-noturno textarea,
 body.modo-noturno input[type="text"],
 body.modo-noturno input[type="file"] {
@@ -833,146 +803,32 @@ body.modo-noturno input[type="file"] {
     border-color: #b83b5e;
 }
 
-/* ==================== BOTÕES ARREDONDADOS (GARANTIA) ==================== */
-.btn-admin, .control-btn, .perfil-seletor button, .usuario-atual button, .aba-btn, button[type="submit"],
-.meta-botoes button, .editarViagemBtn, .apagarViagemBtn, .detalhesViagem, .adicionar-foto-local, .editarLocalBtn, .removerLocalBtn,
-.salvar-comentario-ep, #salvarComentarioFilme, #adicionarLocalBtn, #adicionarViagemBtn, #adicionarFotoBtn, #adicionarSerieBtn,
-#adicionarTimelineBtn, #adicionarMetaBtn, .cat-btn, #novaDataBtn, .remover-data-btn, .fechar-modal-interno, .remover-timeline-btn {
-    background: linear-gradient(135deg, #fff5f7, #ffe0e6) !important;
-    border: 1px solid #ffb7c5 !important;
-    border-radius: 40px !important;
-    color: #8b1e3f !important;
-    font-weight: 600 !important;
-    padding: 0.5rem 1.2rem !important;
-    cursor: pointer;
-    transition: all 0.25s ease !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
-    font-family: 'Poppins', sans-serif;
-}
-.btn-admin:hover, .control-btn:hover, .perfil-seletor button:hover, .usuario-atual button:hover, .aba-btn:hover, button[type="submit"]:hover,
-.meta-botoes button:hover, .editarViagemBtn:hover, .apagarViagemBtn:hover, .detalhesViagem:hover, .adicionar-foto-local:hover, .editarLocalBtn:hover,
-.removerLocalBtn:hover, .salvar-comentario-ep:hover, #salvarComentarioFilme:hover, #adicionarLocalBtn:hover, #adicionarViagemBtn:hover,
-#adicionarFotoBtn:hover, #adicionarSerieBtn:hover, #adicionarTimelineBtn:hover, #adicionarMetaBtn:hover, .cat-btn:hover, #novaDataBtn:hover,
-.remover-data-btn:hover, .fechar-modal-interno:hover, .remover-timeline-btn:hover {
-    background: linear-gradient(135deg, #8b1e3f, #6b142e) !important;
-    color: white !important;
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 18px rgba(139, 30, 63, 0.3) !important;
-}
-
-/* ==================== NOVAS FUNCIONALIDADES (MODO SURPRESA, VÍDEOS, SPOTIFY) ==================== */
-/* Modo Surpresa - esconde detalhes do contador */
-body.modo-surpresa .contador span {
-    display: inline-block;
-}
-body.modo-surpresa #meses, body.modo-surpresa #semanas, body.modo-surpresa #dias,
-body.modo-surpresa #horas, body.modo-surpresa #minutos, body.modo-surpresa #segundos {
-    filter: blur(5px);
-    pointer-events: none;
-    user-select: none;
-}
-body.modo-surpresa .contador::after {
-    content: "💕 Juntos há " attr(data-anos) " anos 💕";
-    font-size: 1.8rem;
-    display: block;
-    margin-top: -0.5rem;
-    color: var(--cor-destaque-hover);
-}
-body.modo-surpresa .contador span {
-    visibility: hidden;
-}
-
-/* Vídeos no álbum */
-.card video {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    background: #000;
-}
-
-/* Player do Spotify */
-#spotifyEmbed {
+/* ==================== CARD DE LOCAL (VIAGEM) ==================== */
+.local-card {
     background: var(--cor-card-fundo);
-    border-radius: 28px;
-    padding: 1rem;
-    margin-top: 1rem;
-}
-#spotifyEmbed iframe {
-    width: 100%;
     border-radius: 20px;
-}
-body.modo-surpresa #meses, body.modo-surpresa #semanas,
-body.modo-surpresa #dias, body.modo-surpresa #horas,
-body.modo-surpresa #minutos, body.modo-surpresa #segundos {
-    display: none;
-}
-body.modo-surpresa .contador::after {
-    content: "💕 Juntos há " attr(data-anos) " anos 💕";
-    font-size: 1.8rem;
-    display: block;
-}
-/* Modo surpresa (fallback) */
-body.modo-surpresa .contador span { display: none; }
-body.modo-surpresa .contador::after {
-    content: "💕 Juntos há " attr(data-anos) " anos 💕";
-    font-size: 1.8rem;
-    display: block;
-}
-/* Spotify Player */
-.spotify-search {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-}
-#spotifySearchInput {
-    flex: 1;
-}
-.spotify-player {
-    background: var(--cor-card-fundo);
-    border-radius: 28px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-}
-.player-info {
-    margin: 1rem 0;
-    text-align: center;
-}
-#spotifyNowPlaying {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-#spotifyDeviceStatus {
-    font-size: 0.8rem;
-    opacity: 0.7;
-}
-/* Spotify Player */
-.spotify-search {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-}
-#spotifySearchInput {
-    flex: 1;
-}
-.spotify-player {
-    background: var(--cor-card-fundo);
-    border-radius: 28px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-}
-#spotifyNowPlaying {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-#spotifyDeviceStatus {
-    font-size: 0.8rem;
-    opacity: 0.7;
-}
-.spotify-player .controls {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+    padding: 1rem;
     margin-bottom: 1rem;
+    border: 1px solid var(--cor-borda);
+    transition: box-shadow 0.2s;
+}
+.local-card:hover { box-shadow: 0 8px 20px rgba(139, 30, 63, 0.1); }
+.local-card h4 { color: var(--cor-destaque); margin-bottom: 0.3rem; }
+.local-card-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.local-fotos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.local-fotos img {
+    width: 80px; height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.local-fotos img:hover { transform: scale(1.05); }
+
+/* ==================== LOADING SPINNER ==================== */
+.loading-text {
+    text-align: center;
+    padding: 2rem;
+    opacity: 0.6;
+    font-size: 0.95rem;
 }
